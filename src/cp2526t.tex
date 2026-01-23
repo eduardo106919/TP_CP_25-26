@@ -896,36 +896,678 @@ que sejam necessárias.
 
 \subsection*{Problema 1}
 
+Na \textbf{primeira questão} do Problema 1, é-nos pedido uma implementação da função 
+\ensuremath{\Varid{levels}} que coloca os elementos de uma árvore binária numa lista, tendo 
+esta várias listas, cada uma relativa a um nível da árvore.
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{E}{@{}>{\hspre}l<{\hspost}@{}}%
-\>[B]{}\Varid{glevels}\mathrel{=}\bot {}\<[E]%
-\\[\blanklineskip]%
-\>[B]{}\Varid{bft}\;\Varid{t}\mathrel{=}\bot {}\<[E]%
+\>[B]{}\Varid{glevels}\mathrel{=}\alt{\Varid{nil}}{\Varid{cons}\comp (\Varid{singl}\times\Varid{g})}{}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\mathbf{where}{}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\Varid{g}\;([\mskip1.5mu \mskip1.5mu],\Varid{r})\mathrel{=}\Varid{r}{}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\Varid{g}\;(\Varid{l},[\mskip1.5mu \mskip1.5mu])\mathrel{=}\Varid{l}{}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\Varid{g}\;((\Varid{l}\mathbin{:}\Varid{ls}),(\Varid{r}\mathbin{:}\Varid{rs}))\mathrel{=}(\Varid{l}\mathbin{+\!\!+}\Varid{r})\mathbin{:}\Varid{g}\;(\Varid{ls},\Varid{rs}){}\<[E]%
 \ColumnHook
 \end{hscode}\resethooks
+
+O diagrama do catamorfismo \ensuremath{\Varid{levels}} é o seguinte:
+\begin{eqnarray*}
+\xymatrix@C=3cm@R=2cm{
+        \ensuremath{\Conid{BTree}\;\Conid{A}}
+                \ar[d]_-{\ensuremath{\llparenthesis\, \Varid{glevels}\,\rrparenthesis}}
+                \ar@/^1pc/[r]^-{\ensuremath{\Varid{outBTree}}}
+&
+        \ensuremath{\mathrm{1}\mathbin{+}\Conid{A}\times(\Conid{BTree}\;\Conid{A})^2}
+                \ar[d]^{\ensuremath{\Varid{id}\mathbin{+}\Varid{id}\times\llparenthesis\, \Varid{glevels}\,\rrparenthesis^2}}
+                \ar@/^1pc/[l]^-{\ensuremath{\Varid{inBTree}}}
+\\
+        \ensuremath{{{\Conid{A}}^{*}}^{*}}
+&
+        \ensuremath{\mathrm{1}\mathbin{+}\Conid{A}\times({{\Conid{A}}^{*}}^{*})^2}
+                \ar[l]^-{\ensuremath{\Varid{glevels}}}
+}
+\end{eqnarray*}
+
+O gene \ensuremath{\Varid{glevels}} deverá ser capaz de juntar os níveis de duas sub-árvores 
+e adicionar a raiz da àrvore à cabeça da lista resultante. Logo será necessário
+realizar uma espécie de \ensuremath{\Varid{zip}} aos elementos das listas. Esta operação está pré definida em Haskell, 
+no entanto esta função remove elementos de uma das listas, caso não tenham o mesmo comprimento, 
+então implementamos a função auxiliar \ensuremath{\Varid{g}} que concatena os elementos (listas) de 
+duas listas, sem perder informação.
+
+O diagrama do gene \ensuremath{\Varid{glevels}} é o seguinte:
+\begin{eqnarray*}
+\xymatrix@C=2cm@R=2cm{
+        \ensuremath{\mathrm{1}}
+                \ar[r]^-{\ensuremath{i_1}}
+                \ar[d]_-{\ensuremath{\Varid{nil}}}
+&
+        \ensuremath{\mathrm{1}\mathbin{+}\Conid{A}\times({{\Conid{A}}^{*}}^{*})^2}
+                \ar[d]_{\ensuremath{\Varid{glevels}}}
+&
+        \ensuremath{\Conid{A}\times({{\Conid{A}}^{*}}^{*})^2}
+                \ar[l]_-{\ensuremath{i_2}}
+                \ar[d]^-{\ensuremath{\Varid{singl}\times\Varid{g}}}
+\\
+        \ensuremath{{{\Conid{A}}^{*}}^{*}}
+                \ar[r]_{\ensuremath{\Varid{id}}}
+&
+        \ensuremath{{{\Conid{A}}^{*}}^{*}}
+&
+        \ensuremath{{\Conid{A}}^{*}\times{{\Conid{A}}^{*}}^{*}}
+                \ar[l]^{\ensuremath{\Varid{cons}}}
+}
+\end{eqnarray*}
+
+Na \textbf{segunda questão} deste problema, o desafio baseia-se em implementar uma travessia
+em largura através de um anamorfismo de listas. A estratégia usada passa por usar uma
+lista de árvores, que corresponde à queue de nodos da árvore a explorar.
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{bft}\mathrel{=}\Varid{concat}\comp \anaList{(\Varid{id}+\Varid{g})\comp \Varid{outList}}\comp \Varid{singl}{}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\mathbf{where}{}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\Varid{g}\mathbin{::}(\Conid{BTree}\;\Varid{a},[\mskip1.5mu \Conid{BTree}\;\Varid{a}\mskip1.5mu])\to ([\mskip1.5mu \Varid{a}\mskip1.5mu],[\mskip1.5mu \Conid{BTree}\;\Varid{a}\mskip1.5mu]){}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\Varid{g}\;(\Conid{Empty},\Varid{rest})\mathrel{=}([\mskip1.5mu \mskip1.5mu],\Varid{rest}){}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\Varid{g}\;(\Conid{Node}\;(\Varid{x},(\Varid{l},\Varid{r})),\Varid{rest})\mathrel{=}([\mskip1.5mu \Varid{x}\mskip1.5mu],\Varid{rest}\mathbin{+\!\!+}[\mskip1.5mu \Varid{l},\Varid{r}\mskip1.5mu]){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+O diagrama deste anamorfismo é o seguinte:
+\begin{eqnarray*}
+\xymatrix@C=4em@R=4em{
+        \ensuremath{{{\Conid{A}}^{*}}^{*}}
+                \ar@/^1pc/[rr]^-{\ensuremath{\Varid{outList}}}
+&
+&
+        \ensuremath{\mathrm{1}\mathbin{+}{\Conid{A}}^{*}\times{{\Conid{A}}^{*}}^{*}}
+                \ar@/^1pc/[ll]^-{\ensuremath{\Varid{inList}}}
+\\
+        \ensuremath{{(\Conid{BTree}\;\Conid{A})}^{*}}
+                \ar[u]^-{\ensuremath{\lanabracket\,(\Varid{id}\mathbin{+}\Varid{g})\comp \Varid{out}\,\ranabracket}}
+                \ar[r]_-{\ensuremath{\Varid{outList}}}
+&
+        \ensuremath{\mathrm{1}\mathbin{+}\Conid{BTree}\;\Conid{A}\times{(\Conid{BTree}\;\Conid{A})}^{*}}
+                \ar[r]_-{\ensuremath{\Varid{id}\mathbin{+}\Varid{g}}}
+&
+        \ensuremath{\mathrm{1}\mathbin{+}{\Conid{A}}^{*}\times{(\Conid{BTree}\;\Conid{A})}^{*}}
+                \ar[u]_{\ensuremath{\Varid{id}\mathbin{+}\Varid{id}\times\lanabracket\,(\Varid{id}\mathbin{+}\Varid{g})\comp \Varid{out}\,\ranabracket}}
+}
+\end{eqnarray*}
 
 \subsection*{Problema 2}
 
-\subsection*{Problema 3}
+Neste problema é-nos proposto derivar a definição do seno hiperbólico para n aproximações da sua série de Taylor.
+\begin{eqnarray*}
+\start
+\ensuremath{\Varid{sinh}\;(\Varid{x})\mathrel{=}{\sum}\;\frac{\Varid{x}\mathbin{\uparrow}(\mathrm{2}\;\Varid{n}\mathbin{+}\mathrm{1})}{{(\mathrm{2}\;\Varid{n}\mathbin{+}\mathrm{1})!}}}
+\end{eqnarray*}
 
+O primeiro passo será resolver o somatório, transformando a definição de \ensuremath{\Varid{sinh}\;\Varid{x}} numa função recursiva:
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{E}{@{}>{\hspre}l<{\hspost}@{}}%
-\>[B]{}\Varid{fair\char95 merge'}\mathrel{=}\lanabracket\,\bot \,\ranabracket{}\<[E]%
+\>[B]{}\Varid{sinh}\;\Varid{x}\;\mathrm{0}\mathrel{=}\Varid{x}{}\<[E]%
+\\
+\>[B]{}\Varid{sinh}\;\Varid{x}\;(\Varid{n}\mathbin{+}\mathrm{1})\mathrel{=}\Varid{x}\mathbin{\uparrow}(\mathrm{2}\mathbin{*}\Varid{n}\mathbin{+}\mathrm{3})\mathbin{/}{(\mathrm{2}\mathbin{*}\Varid{n}\mathbin{+}\mathrm{3})!}\mathbin{+}\Varid{sinh}\;\Varid{x}\;\Varid{n}{}\<[E]%
 \ColumnHook
 \end{hscode}\resethooks
+
+O corpo desta função é dependente do seu input \ensuremath{\Varid{n}\mathbin{+}\mathrm{1}}, logo teremos que simplificar \ensuremath{\Varid{sinh}\;\Varid{x}}. Podemos então introduzir duas funções:
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{f1}\;\Varid{x}\;\Varid{n}\mathrel{=}\Varid{x}\mathbin{\uparrow}(\mathrm{2}\mathbin{*}\Varid{n}\mathbin{+}\mathrm{3}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{f2}\;\Varid{n}\mathrel{=}{(\mathrm{2}\mathbin{*}\Varid{n}\mathbin{+}\mathrm{3})!}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Desta forma \ensuremath{\Varid{sinh}\;\Varid{x}} ficará dependente das definições de \ensuremath{\Varid{f1}} e \ensuremath{\Varid{f2}}. Será necessário obter as definições recursivas primitivas destas duas funções, tal é alcançável através da substituição do valor de \ensuremath{\Varid{n}} por 0, de forma a obter a base da recursividade:
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{f1}\;\Varid{x}\;\mathrm{0}\mathrel{=}\Varid{x}\mathbin{\uparrow}(\mathrm{2}\mathbin{*}\mathrm{0}\mathbin{+}\mathrm{3})\mathrel{=}\Varid{x}\mathbin{\uparrow}\mathrm{3}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{f2}\;\mathrm{0}\mathrel{=}{(\mathrm{2}\mathbin{*}\mathrm{0}\mathbin{+}\mathrm{3})!}\mathrel{=}\mathrm{6}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+A definição recursiva de \ensuremath{\Varid{f1}} pode ser obtida através da divisão entre \ensuremath{\Varid{f1}\;\Varid{x}\;(\Varid{n}\mathbin{+}\mathrm{1})} e \ensuremath{\Varid{f1}\;\Varid{x}\;\Varid{n}}:
+\begin{eqnarray*}
+\start
+\ensuremath{\frac{\Varid{f1}\;\Varid{x}\;(\Varid{n}\mathbin{+}\mathrm{1})}{\Varid{f1}\;\Varid{x}\;\Varid{n}}\mathrel{=}\frac{\Varid{x}\mathbin{\uparrow}(\mathrm{2}\;\Varid{n}\mathbin{+}\mathrm{5})}{\Varid{x}\mathbin{\uparrow}(\mathrm{2}\;\Varid{n}\mathbin{+}\mathrm{3})}\mathrel{=}\Varid{x}\mathbin{\uparrow}\mathrm{2}}
+\end{eqnarray*}
+
+Podemos aplicar o mesmo procedimento à função \ensuremath{\Varid{f2}}:
+\begin{eqnarray*}
+\start
+\ensuremath{\frac{\Varid{f2}\;\Varid{x}\;(\Varid{n}\mathbin{+}\mathrm{1})}{\Varid{f2}\;\Varid{x}\;\Varid{n}}\mathrel{=}\frac{{(\mathrm{2}\;\Varid{n}\mathbin{+}\mathrm{5})!}}{{(\mathrm{2}\;\Varid{n}\mathbin{+}\mathrm{3})!}}\mathrel{=}(\mathrm{2}\;\Varid{n}\mathbin{+}\mathrm{5})\mathbin{*}(\mathrm{2}\;\Varid{n}\mathbin{+}\mathrm{4})\mathrel{=}\mathrm{4}\;\Varid{n}\mathbin{\uparrow}\mathrm{2}\mathbin{+}\mathrm{18}\;\Varid{n}\mathbin{+}\mathrm{20}}
+\end{eqnarray*}
+
+Temos então as definições recursivas de \ensuremath{\Varid{f1}} e \ensuremath{\Varid{f2}}:
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{f1}\;\Varid{x}\;\mathrm{0}\mathrel{=}\Varid{x}\mathbin{\uparrow}\mathrm{3}{}\<[E]%
+\\
+\>[B]{}\Varid{f1}\;\Varid{x}\;(\Varid{n}\mathbin{+}\mathrm{1})\mathrel{=}\Varid{x}\mathbin{\uparrow}\mathrm{2}\mathbin{*}\Varid{f1}\;\Varid{x}\;\Varid{n}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{f2}\;\mathrm{0}\mathrel{=}\mathrm{6}{}\<[E]%
+\\
+\>[B]{}\Varid{f2}\;(\Varid{n}\mathbin{+}\mathrm{1})\mathrel{=}(\mathrm{4}\mathbin{*}\Varid{n}\mathbin{\uparrow}\mathrm{2}\mathbin{+}\mathrm{18}\mathbin{*}\Varid{n}\mathbin{+}\mathrm{20})\mathbin{*}\Varid{f2}\;\Varid{n}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Podemos verificar que \ensuremath{\Varid{f2}} ainda depende de \ensuremath{\Varid{n}}, logo teremos de repetir o processo de forma a simplificar \ensuremath{\Varid{f2}}. Introduzimos \ensuremath{\Varid{f3}\mathrel{=}\mathrm{4}\mathbin{*}\Varid{n}\mathbin{\uparrow}\mathrm{2}\mathbin{+}\mathrm{18}\mathbin{*}\Varid{n}\mathbin{+}\mathrm{20}}. Por substituição obtemos o caso base de \ensuremath{\Varid{f3}} e resolvendo a equação \ensuremath{\Varid{f3}\;(\Varid{n}\mathbin{+}\mathrm{1})\mathbin{-}\Varid{f3}\;\Varid{n}} obtemos a definição recursiva:
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{f3}\;\mathrm{0}\mathrel{=}\mathrm{20}{}\<[E]%
+\\
+\>[B]{}\Varid{f3}\;(\Varid{n}\mathbin{+}\mathrm{1})\mathrel{=}\mathrm{8}\mathbin{*}\Varid{n}\mathbin{+}\mathrm{22}\mathbin{+}\Varid{f3}\;\Varid{n}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Será necessário repetir o processo uma última vez, pois \ensuremath{\Varid{f3}} continua dependente de \ensuremath{\Varid{n}}. Para obter \ensuremath{\Varid{f4}} usamos o mesmo processo apresentado anteriormente, isto é, tomamos \ensuremath{\Varid{f4}\;\Varid{n}\mathrel{=}\mathrm{8}\mathbin{*}\Varid{n}}, substituimos \ensuremath{\Varid{n}} por 0, para determinar a base da recursividade, e calculamos \ensuremath{\Varid{f4}\;(\Varid{n}\mathbin{+}\mathrm{1})\mathbin{-}\Varid{f4}\;\Varid{n}} para determinar o corpo da recursividade:
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{f4}\;\mathrm{0}\mathrel{=}\mathrm{22}{}\<[E]%
+\\
+\>[B]{}\Varid{f4}\;(\Varid{n}\mathbin{+}\mathrm{1})\mathrel{=}\mathrm{8}\mathbin{+}\Varid{f4}\;\Varid{n}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Podemos então apresentar as versões primitivas das funções mencionadas anteriormente, que nos irão ajudar na dedução da função \ensuremath{\Varid{f}}:
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{f4}\;\mathrm{0}\mathrel{=}\mathrm{22}{}\<[E]%
+\\
+\>[B]{}\Varid{f4}\;(\Varid{n}\mathbin{+}\mathrm{1})\mathrel{=}\mathrm{8}\mathbin{+}\Varid{f4}\;\Varid{n}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{f3'}\;\mathrm{0}\mathrel{=}\mathrm{20}{}\<[E]%
+\\
+\>[B]{}\Varid{f3'}\;(\Varid{n}\mathbin{+}\mathrm{1})\mathrel{=}\Varid{f4}\;\Varid{n}\mathbin{+}\Varid{f3'}\;\Varid{n}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{f2'}\;\mathrm{0}\mathrel{=}\mathrm{6}{}\<[E]%
+\\
+\>[B]{}\Varid{f2'}\;(\Varid{n}\mathbin{+}\mathrm{1})\mathrel{=}\Varid{f3'}\;\Varid{n}\mathbin{*}\Varid{f2'}\;\Varid{n}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{f1}\;\Varid{x}\;\mathrm{0}\mathrel{=}\Varid{x}\mathbin{\uparrow}\mathrm{3}{}\<[E]%
+\\
+\>[B]{}\Varid{f1}\;\Varid{x}\;(\Varid{n}\mathbin{+}\mathrm{1})\mathrel{=}\Varid{x}\mathbin{\uparrow}\mathrm{2}\mathbin{*}\Varid{f1}\;\Varid{x}\;\Varid{n}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{sinh'}\;\Varid{x}\;\mathrm{0}\mathrel{=}\Varid{x}{}\<[E]%
+\\
+\>[B]{}\Varid{sinh'}\;\Varid{x}\;(\Varid{n}\mathbin{+}\mathrm{1})\mathrel{=}\Varid{f1}\;\Varid{x}\;\Varid{n}\mathbin{/}\Varid{f2'}\;\Varid{n}\mathbin{+}\Varid{sinh'}\;\Varid{x}\;\Varid{n}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Todas estas funções partilham uma caracteristica fundamental para que seja possível derivar \ensuremath{\Varid{f}}, todas elas trabalham sobre o Functor dos Naturais. Através das seguintes regras, podemos derivar uma versão de \ensuremath{\Varid{f}}, que usa o catamorfismo \ensuremath{\for{\Varid{b}}\ {\Varid{i}}} dos Naturais:
+\begin{itemize}
+\item O corpo do ciclo loop terá tantos argumentos quanto o número de funções mutuamente recursivas.
+\item Para as variáveis escolhem-se os próprios nomes das funções, pela ordem que se achar conveniente.
+\item Para os resultados vão-se buscar as expressões respectivas, retirando a variável n.
+\item Em start coleccionam-se os resultados dos casos de base das funções, pela mesma ordem.
+\end{itemize}
+
+Seguindo as regras apresentadas e a \textbf{lei da recursividade mútua}, podemos obter a seguinte função (\textbf{Nota}: por simplicidade e elegância, em vez de se utilizar pares de elementos, usaremos uma lista e a função head):
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{14}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{f'}\;\Varid{x}\mathrel{=}\Varid{head}\comp \for{\Varid{loop}}\ {\Varid{start}}\;\mathbf{where}{}\<[E]%
+\\
+\>[B]{}\hsindent{9}{}\<[9]%
+\>[9]{}\Varid{loop}\;[\mskip1.5mu \Varid{s},\Varid{f1},\Varid{f2},\Varid{f3},\Varid{f4}\mskip1.5mu]\mathrel{=}{}\<[E]%
+\\
+\>[9]{}\hsindent{5}{}\<[14]%
+\>[14]{}[\mskip1.5mu \Varid{f1}\mathbin{/}\Varid{f2}\mathbin{+}\Varid{s},\Varid{x}\mathbin{\uparrow}\mathrm{2}\mathbin{*}\Varid{f1},\Varid{f2}\mathbin{*}\Varid{f3},\Varid{f3}\mathbin{+}\Varid{f4},\mathrm{8}\mathbin{+}\Varid{f4}\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\hsindent{9}{}\<[9]%
+\>[9]{}\Varid{start}\;\Varid{x}\mathrel{=}[\mskip1.5mu \Varid{x},\Varid{x}\mathbin{\uparrow}\mathrm{3},\mathrm{6},\mathrm{20},\mathrm{22}\mskip1.5mu]{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+No entanto, a função \ensuremath{\Varid{f}} está definida em formato pointwise, logo será necessário aplicar a regra Universal-Cata a \ensuremath{\for{\Varid{loop}}\ {\Varid{start}}}:
+\begin{eqnarray*}
+\start
+\ensuremath{\Varid{worker}\mathrel{=}\for{\Varid{loop}}\ {\Varid{start}}}
+\just\equiv{ Def. for, universal cata }
+\ensuremath{\Varid{worker}\comp \mathsf{in}\mathrel{=}\alt{\Varid{start}}{\Varid{loop}}\comp \fun F \;\Varid{worker}}
+\just\equiv{ \ensuremath{\fun F \;\Varid{f}\mathrel{=}\Varid{id}\mathbin{+}\Varid{f}}, Absorção-\ensuremath{\mathbin{+}}, Natural-\ensuremath{\Varid{id}} }
+\ensuremath{\Varid{worker}\comp \mathsf{in}\mathrel{=}\alt{\Varid{start}}{\Varid{loop}\comp \Varid{worker}}}
+\just\equiv{ Def. \ensuremath{\mathsf{in}}, Fusão-\ensuremath{\mathbin{+}}, Eq-\ensuremath{\mathbin{+}}, pointwise, Def. composição }
+\ensuremath{\begin{lcbr}\Varid{worker}\;\mathrm{0}\mathrel{=}\Varid{start}\;\Varid{x}\\\Varid{worker}\;(\Varid{n}\mathbin{+}\mathrm{1})\mathrel{=}\Varid{loop}\;(\Varid{worker}\;\Varid{n})\end{lcbr}}
+\end{eqnarray*}
+
+Através da definição pointwise de \ensuremath{\Varid{worker}}, e de algumas mudanças de nome às variáveis, derivamos a definição do seno hiperbólico de \ensuremath{\Varid{x}}, para \ensuremath{\Varid{n}} aproximações da sua série de Taylor:
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{10}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{11}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{23}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{32}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{39}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{46}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{52}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{f}\;\Varid{x}\mathrel{=}\Varid{wrapper}\comp \Varid{worker}\;\mathbf{where}{}\<[E]%
+\\
+\>[B]{}\hsindent{10}{}\<[10]%
+\>[10]{}\Varid{wrapper}\mathrel{=}\Varid{head}{}\<[E]%
+\\
+\>[B]{}\hsindent{10}{}\<[10]%
+\>[10]{}\Varid{worker}\;\mathrm{0}\mathrel{=}\Varid{start}\;\Varid{x}{}\<[E]%
+\\
+\>[B]{}\hsindent{10}{}\<[10]%
+\>[10]{}\Varid{worker}\;(\Varid{n}\mathbin{+}\mathrm{1})\mathrel{=}\Varid{loop}\;\Varid{x}\;(\Varid{worker}\;\Varid{n}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{loop}\;\Varid{x}\;{}\<[11]%
+\>[11]{}[\mskip1.5mu \Varid{s},{}\<[23]%
+\>[23]{}\Varid{h},{}\<[32]%
+\>[32]{}\Varid{k},{}\<[39]%
+\>[39]{}\Varid{j},{}\<[46]%
+\>[46]{}\Varid{m}{}\<[52]%
+\>[52]{}\mskip1.5mu]\mathrel{=}{}\<[E]%
+\\
+\>[11]{}[\mskip1.5mu \Varid{h}\mathbin{/}\Varid{k}\mathbin{+}\Varid{s},\Varid{x}\mathbin{\uparrow}\mathrm{2}\mathbin{*}\Varid{h},\Varid{k}\mathbin{*}\Varid{j},\Varid{j}\mathbin{+}\Varid{m},\Varid{m}\mathbin{+}\mathrm{8}\mskip1.5mu]{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{start}\;\Varid{x}\mathrel{=}[\mskip1.5mu \Varid{x},{}\<[23]%
+\>[23]{}\Varid{x}\mathbin{\uparrow}\mathrm{3},{}\<[32]%
+\>[32]{}\mathrm{6},{}\<[39]%
+\>[39]{}\mathrm{20},{}\<[46]%
+\>[46]{}\mathrm{22}{}\<[52]%
+\>[52]{}\mskip1.5mu]{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+
+\subsection*{Problema 3}
+
+O primeiro passo para resolver este problema será derivar a lei \textbf{dual} da recursividade mútua:
+\begin{eqnarray*}
+\start
+\ensuremath{\alt{\Varid{f}}{\Varid{g}}\mathrel{=}\ana{\alt{\Varid{h}}{\Varid{k}}}}
+\just\equiv{ universal ana }
+\ensuremath{\Varid{out}\comp \alt{\Varid{f}}{\Varid{g}}\mathrel{=}\fun F \;\alt{\Varid{f}}{\Varid{g}}\comp \alt{\Varid{h}}{\Varid{k}}}
+\just\equiv{ Fusão-\ensuremath{\mathbin{+}} (twice) }
+\ensuremath{\alt{\Varid{out}\comp \Varid{f}}{\Varid{out}\comp \Varid{g}}\mathrel{=}\alt{\fun F \;\alt{\Varid{f}}{\Varid{g}}\comp \Varid{h}}{\fun F \;\alt{\Varid{f}}{\Varid{g}}\comp \Varid{k}}}
+\just\equiv{ Eq-\ensuremath{\mathbin{+}} }
+\ensuremath{\begin{lcbr}\Varid{out}\comp \Varid{f}\mathrel{=}\fun F \;\alt{\Varid{f}}{\Varid{g}}\comp \Varid{h}\\\Varid{out}\comp \Varid{g}\mathrel{=}\fun F \;\alt{\Varid{f}}{\Varid{g}}\comp \Varid{k}\end{lcbr}}
+\end{eqnarray*}
+
+De seguida iremos derivar um anamorfismo a partir do coproduto de \ensuremath{\Varid{h}} e \ensuremath{\Varid{k}}, definidos em \ensuremath{\Varid{fair\char95 merge}}:
+\begin{eqnarray*}
+\start
+\ensuremath{\begin{lcbr}\Varid{h}\;(\Conid{Cons}\;(\Varid{x},\Varid{xs}),\Varid{y})\mathrel{=}\Conid{Cons}\;(\Varid{x},\Varid{k}\;(\Varid{xs},\Varid{y}))\\\Varid{k}\;(\Varid{x},\Conid{Cons}\;(\Varid{y},\Varid{ys}))\mathrel{=}\Conid{Cons}\;(\Varid{y},\Varid{h}\;(\Varid{x},\Varid{ys}))\end{lcbr}}
+\just\equiv{ Def-\ensuremath{\times}, Def. \ensuremath{\Varid{assocr}}, Def. \ensuremath{\Varid{aux}} }
+\ensuremath{\begin{lcbr}\Varid{h}\;((\Conid{Cons}\times\Varid{id})\;((\Varid{x},\Varid{xs}),\Varid{y}))\mathrel{=}\Conid{Cons}\;((\Varid{id}\times\Varid{k})\;(\Varid{assocr}\;((\Varid{x},\Varid{xs}),\Varid{y})))\\\Varid{k}\;((\Varid{id}\times\Conid{Cons})\;(\Varid{x},(\Varid{y},\Varid{ys})))\mathrel{=}\Conid{Cons}\;((\Varid{id}\times\Varid{h})\;(\Varid{aux}\;(\Varid{x},(\Varid{y},\Varid{ys}))))\end{lcbr}}
+\just\equiv{ Def-comp, pointfree }
+\ensuremath{\begin{lcbr}\Varid{h}\comp (\Conid{Cons}\times\Varid{id})\mathrel{=}\Conid{Cons}\comp (\Varid{id}\times\Varid{k})\comp \Varid{assocr}\\\Varid{k}\comp (\Varid{id}\times\Conid{Cons})\mathrel{=}\Conid{Cons}\comp (\Varid{id}\times\Varid{h})\comp \Varid{aux}\end{lcbr}}
+\just\equiv{ ´Shunt-right´ }
+\ensuremath{\begin{lcbr}\Varid{out}\comp \Varid{h}\comp (\Conid{Cons}\times\Varid{id})\mathrel{=}(\Varid{id}\times\Varid{k})\comp \Varid{assocr}\\\Varid{out}\comp \Varid{k}\comp (\Varid{id}\times\Conid{Cons})\mathrel{=}(\Varid{id}\times\Varid{h})\comp \Varid{aux}\end{lcbr}}
+\just\impliedby{ Leibniz }
+\ensuremath{\begin{lcbr}\Varid{out}\comp \Varid{h}\comp (\Conid{Cons}\times\Varid{id})\comp (\Varid{out}\times\Varid{id})\mathrel{=}(\Varid{id}\times\Varid{k})\comp \Varid{assocr}\comp (\Varid{out}\times\Varid{id})\\\Varid{out}\comp \Varid{k}\comp (\Varid{id}\times\Conid{Cons})\comp (\Varid{id}\times\Varid{out})\mathrel{=}(\Varid{id}\times\Varid{h})\comp \Varid{aux}\comp (\Varid{id}\times\Varid{out})\end{lcbr}}
+\just\equiv{ isomorfismo in/out }
+\ensuremath{\begin{lcbr}\Varid{out}\comp \Varid{h}\mathrel{=}(\Varid{id}\times\Varid{k})\comp \Varid{assocr}\comp (\Varid{out}\times\Varid{id})\\\Varid{out}\comp \Varid{k}\mathrel{=}(\Varid{id}\times\Varid{h})\comp \Varid{aux}\comp (\Varid{id}\times\Varid{out})\end{lcbr}}
+\just\equiv{ Cancelamento-\ensuremath{\mathbin{+}} (twice) }
+\ensuremath{\begin{lcbr}\Varid{out}\comp \Varid{h}\mathrel{=}(\Varid{id}\times(\alt{\Varid{h}}{\Varid{k}}\comp i_2))\comp \Varid{assocr}\comp (\Varid{out}\times\Varid{id})\\\Varid{out}\comp \Varid{k}\mathrel{=}(\Varid{id}\times(\alt{\Varid{h}}{\Varid{k}}\comp i_1))\comp \Varid{aux}\comp (\Varid{id}\times\Varid{out})\end{lcbr}}
+\just\equiv{ Functor-\ensuremath{\times} }
+\ensuremath{\begin{lcbr}\Varid{out}\comp \Varid{h}\mathrel{=}(\Varid{id}\times\alt{\Varid{h}}{\Varid{k}})\comp (\Varid{id}\times(i_2))\comp \Varid{assocr}\comp (\Varid{out}\times\Varid{id})\\\Varid{out}\comp \Varid{k}\mathrel{=}(\Varid{id}\times\alt{\Varid{h}}{\Varid{k}})\comp (\Varid{id}\times(i_1))\comp \Varid{aux}\comp (\Varid{id}\times\Varid{out})\end{lcbr}}
+\just\equiv{ \ensuremath{\fun F \;\Varid{f}\mathrel{=}\Varid{id}\times\Varid{f}} }
+\ensuremath{\begin{lcbr}\Varid{out}\comp \Varid{h}\mathrel{=}\fun F \;\alt{\Varid{h}}{\Varid{k}}\comp (\Varid{id}\times(i_2))\comp \Varid{assocr}\comp (\Varid{out}\times\Varid{id})\\\Varid{out}\comp \Varid{k}\mathrel{=}\fun F \;\alt{\Varid{h}}{\Varid{k}}\comp (\Varid{id}\times(i_1))\comp \Varid{aux}\comp (\Varid{id}\times\Varid{out})\end{lcbr}}
+\just\equiv{ Lei dual da recursividade mútua }
+\ensuremath{\alt{\Varid{h}}{\Varid{k}}\mathrel{=}\ana{\alt{(\Varid{id}\times(i_2))\comp \Varid{assocr}\comp (\Varid{out}\times\Varid{id})}{(\Varid{id}\times(i_1))\comp \Varid{aux}\comp (\Varid{id}\times\Varid{out})}}}
+\end{eqnarray*}
+
+\textbf{Nota}: Nos cálculos apresentados acima é referida uma função \ensuremath{\Varid{aux}}, esta função foi usada para simplificar a apresentação da função \ensuremath{\Varid{fair\char95 merge'}}. Podemos observar na definição de \ensuremath{\Varid{fair\char95 merge}}, mais precisamente na definição de \ensuremath{\Varid{k}}, que as instâncias \ensuremath{\Varid{x}} e \ensuremath{\Varid{y}} trocam de posições, logo a função \ensuremath{\Varid{aux}} efetua esta troca.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{fair\char95 merge'}\mathrel{=}\lanabracket\,\alt{\Varid{l}}{\Varid{r}}\,\ranabracket{}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\mathbf{where}{}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\Varid{aux}\;(\Varid{x},(\Varid{y},\Varid{z}))\mathrel{=}(\Varid{y},(\Varid{x},\Varid{z})){}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\Varid{l}\mathrel{=}(\Varid{id}\times(i_2))\comp \Varid{assocr}\comp (\mathsf{out}\times\Varid{id}){}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\Varid{r}\mathrel{=}(\Varid{id}\times(i_1))\comp \Varid{aux}\comp (\Varid{id}\times\mathsf{out}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+
+O diagrama do anamorfismo \ensuremath{\Varid{fair\char95 merge'}} é o seguinte:
+\begin{eqnarray*}
+\xymatrix@C=4cm@R=4em{
+        \ensuremath{\Conid{Stream}\;\Conid{A}}
+&
+        \ensuremath{\Conid{A}\times\Conid{Stream}\;\Conid{A}}
+                \ar[l]_-{\ensuremath{\Conid{Cons}}}
+\\
+        \ensuremath{(\Conid{Stream}\;\Conid{A})^2\mathbin{+}(\Conid{Stream}\;\Conid{A})^2}
+                \ar[u]^-{\ensuremath{\lanabracket\,\alt{\Varid{l}}{\Varid{r}}\,\ranabracket}}
+                \ar[r]_-{\ensuremath{\alt{\Varid{l}}{\Varid{r}}}}
+&
+        \ensuremath{\Conid{A}\times(\Conid{Stream}\;\Conid{A})^2\mathbin{+}(\Conid{Stream}\;\Conid{A})^2}
+                \ar[u]_-{\ensuremath{\Varid{id}\mathbin{+}\lanabracket\,\alt{\Varid{l}}{\Varid{r}}\,\ranabracket}}
+}
+\end{eqnarray*}
+
+O diagrama da alternativa \ensuremath{\alt{\Varid{l}}{\Varid{r}}} é o seguinte:
+\begin{eqnarray*}
+\xymatrix{
+        \ensuremath{(\Conid{Stream}\;\Conid{A})^2}
+                \ar[r]^-{\ensuremath{i_1}}
+                \ar[d]_-{\ensuremath{\Varid{out}\times\Varid{id}}}
+&
+        \ensuremath{(\Conid{Stream}\;\Conid{A})^2\mathbin{+}(\Conid{Stream}\;\Conid{A})^2}
+                \ar[ddd]_{\ensuremath{\alt{\Varid{l}}{\Varid{r}}}}
+&
+        \ensuremath{(\Conid{Stream}\;\Conid{A})^2}
+                \ar[l]_-{\ensuremath{i_2}}
+                \ar[d]^-{\ensuremath{\Varid{id}\times\Varid{out}}}
+\\
+        \ensuremath{(\Conid{A}\times\Conid{Stream}\;\Conid{A})\times\Conid{Stream}\;\Conid{A}}
+                \ar[d]_{\ensuremath{\Varid{assocr}}}
+&
+&
+        \ensuremath{\Conid{Stream}\;\Conid{A}\times(\Conid{A}\times\Conid{Stream}\;\Conid{A})}
+                \ar[d]^{\ensuremath{\Varid{aux}}}
+\\
+        \ensuremath{\Conid{A}\times(\Conid{Stream}\;\Conid{A})^2}
+                \ar[dr]^{\ensuremath{\Varid{id}\times(i_2)}}
+&
+&
+        \ensuremath{\Conid{A}\times(\Conid{Stream}\;\Conid{A})^2}
+                \ar[dl]_{\ensuremath{\Varid{id}\times(i_1)}}
+\\
+&
+        \ensuremath{\Conid{A}\times(\Conid{Stream}\;\Conid{A})^2\mathbin{+}(\Conid{Stream}\;\Conid{A})^2}
+&
+}
+\end{eqnarray*}
+
+De forma a garantir que o comportamento da função \ensuremath{\Varid{fair\char95 merge'}} é realmente o correto, definimos as seguintes instâncias de \ensuremath{\Conid{Stream}\;\Conid{Int}} e a função \ensuremath{\Varid{takeStream}}, dado que estamos perante um tipo de dados infinito, podemos tirar partido da \lazy{lazy evalution} do \Haskell.
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{ones}\mathbin{::}\Conid{Stream}\;\Conid{Int}{}\<[E]%
+\\
+\>[B]{}\Varid{ones}\mathrel{=}\Conid{Cons}\;(\mathrm{1},\Varid{ones}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{twos}\mathbin{::}\Conid{Stream}\;\Conid{Int}{}\<[E]%
+\\
+\>[B]{}\Varid{twos}\mathrel{=}\Conid{Cons}\;(\mathrm{2},\Varid{twos}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{takeStream}\mathbin{::}\Conid{Int}\to \Conid{Stream}\;\Varid{a}\to [\mskip1.5mu \Varid{a}\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\Varid{takeStream}\;\mathrm{0}\;\anonymous \mathrel{=}[\mskip1.5mu \mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\Varid{takeStream}\;(\Varid{n}\mathbin{+}\mathrm{1})\;(\Conid{Cons}\;(\Varid{x},\Varid{s}))\mathrel{=}\Varid{x}\mathbin{:}\Varid{takeStream}\;\Varid{n}\;\Varid{s}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Podemos usar esta função para verificar se \ensuremath{\Varid{fair\char95 merge}} e \ensuremath{\Varid{fair\char95 merge'}} têm o mesmo comportamento, mas é importante realçar que esta demonstração não é uma prova total.
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{16}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{20}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{streamTest}\;\Varid{n}\mathrel{=}\mathbf{let}{}\<[E]%
+\\
+\>[B]{}\hsindent{20}{}\<[20]%
+\>[20]{}\Varid{input}\mathrel{=}i_1\;(\Varid{ones},\Varid{twos}){}\<[E]%
+\\
+\>[B]{}\hsindent{20}{}\<[20]%
+\>[20]{}\Varid{l}\mathrel{=}\Varid{takeStream}\;\Varid{n}\;(\Varid{fair\char95 merge}\;\Varid{input}){}\<[E]%
+\\
+\>[B]{}\hsindent{20}{}\<[20]%
+\>[20]{}\Varid{r}\mathrel{=}\Varid{takeStream}\;\Varid{n}\;(\Varid{fair\char95 merge'}\;\Varid{input}){}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mathbf{in}\;\Varid{l}\equiv \Varid{r}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
 
 \subsection*{Problema 4}
 
+Para resolver este problema, iremos dividir a resolução em duas fases: (1) definir o operador \ensuremath{\Varid{pcataList}} e (2) definir \ensuremath{\Varid{gene}}. Podemos verificar que os tipos de \ensuremath{\Varid{pcataList}} e \ensuremath{\llparenthesis\, \cdot \,\rrparenthesis} são semelhantes, e numa primeira tentativa assumir que são iguais.
+\begin{eqnarray*}
+\xymatrix@C=3cm@R=2cm{
+        \ensuremath{{\Conid{A}}^{*}}
+                \ar[d]_-{\ensuremath{\Varid{pcataList}\;\Varid{g}}}
+                \ar@/^1pc/[r]^-{\ensuremath{\Varid{outList}}}
+&
+        \ensuremath{\mathrm{1}\mathbin{+}\Conid{A}\times{\Conid{A}}^{*}}
+                \ar[d]^{\ensuremath{\Varid{id}\mathbin{+}\Varid{id}\times\Varid{pcataList}\;\Varid{g}}}
+                \ar@/^1pc/[l]^-{\ensuremath{\Varid{inList}}}
+\\
+        \ensuremath{\fun{Dist}\;\mathit B}
+&
+        \ensuremath{\mathrm{1}\mathbin{+}\Conid{A}\times\fun{Dist}\;\mathit B}
+                \ar[l]^-{\ensuremath{\Varid{g}}}
+}
+\end{eqnarray*}
+
+Analisando o diagrama verificamos que o tipo do gene \ensuremath{\Varid{g}} não encaixa no diagrama, pois o seu tipo é \ensuremath{\Varid{g}\mathbin{:}\mathrm{1}\mathbin{+}\Conid{A}\times\mathit B\to \fun{Dist}\;\mathit B}, logo não poderemos definir \ensuremath{\Varid{pcataList}} como um catamorfismo de listas "normal". (É importante salientar que o diagrama apresentado é \textbf{inválido}, isto é, os tipos não são válidos.)
+
+Embora o diagrama seja inválido, podemos tentar corrigi-lo através da definição de algumas funções, isto é, se formos capazes de definir uma composição de funções que satisfaça o tipo \ensuremath{\mathrm{1}\mathbin{+}\Conid{A}\times\fun{Dist}\;\mathit B\to \fun{Dist}\;\mathit B} e que envolva o gene \ensuremath{\Varid{g}}.
+
+Sendo \ensuremath{\fun{Dist}\;\mathit B} um Monad, como podemos verificar na biblioteca \Probability\ através da definição de \ensuremath{\Varid{return}} e de \ensuremath{\bind }:
+\begin{itemize}
+     \item \ensuremath{\Varid{return}\;\Varid{x}\mathrel{=}\Conid{D}\;[\mskip1.5mu (\Varid{x},\mathrm{1})\mskip1.5mu]}
+     \item \ensuremath{\Varid{d}\bind \Varid{f}\mathrel{=}\Conid{D}\;[\mskip1.5mu (\Varid{y},\Varid{q}\mathbin{*}\Varid{p})\mid (\Varid{x},\Varid{p})\leftarrow \Varid{unD}\;\Varid{d},(\Varid{y},\Varid{q})\leftarrow \Varid{unD}\;(\Varid{f}\;\Varid{x})\mskip1.5mu]}), e o gene \ensuremath{\Varid{g}\mathbin{:}\mathrm{1}\mathbin{+}\Conid{A}\times\mathit B\to \fun{Dist}\;\mathit B}
+\end{itemize}
+
+Podemos tentar definir uma composição monádica \ensuremath{\Varid{g}\kcomp \Varid{f}\comp \fun F \;(\Varid{pcataList}\;\Varid{g})\comp \Varid{outList}}, com \ensuremath{\Varid{f}\mathbin{:}\mathrm{1}\mathbin{+}\Conid{A}\times\fun{Dist}\;\mathit B\to \fun{Dist}\;(\mathrm{1}\mathbin{+}\Conid{A}\times\mathit B)}. Conseguimos deduzir que \ensuremath{\Varid{f}} será uma alternativa, dado o seu tipo ser do género \ensuremath{\Conid{A}\mathbin{+}\mathit B\to \mathit C}. O lado esquerdo da alternativa é simples de resolver, bastando efetuar uma injeção e colocar o resultado na "caixa" \ensuremath{\fun{Dist}}, ou seja \ensuremath{\Varid{f}\mathrel{=}\alt{\Varid{return}\comp i_1}{\bot }}. Para o lado direito da alternativa teremos que emparelhar cada elemento \ensuremath{\Varid{b}} que está dentro do Monad \ensuremath{\fun{Dist}\;\mathit B} com o elemento \ensuremath{\Conid{A}}. Tal é possível através da notação \ensuremath{\mathbf{do}} em Haskell, que nos permite "iterar" sobre os elementos de um Monad. Definimos então a função \ensuremath{\Varid{attach}} que pega num elemento puro e combina-o dentro de um Monad.
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{E}{@{}>{\hspre}l<{\hspost}@{}}%
-\>[B]{}\Varid{pcataList}\mathrel{=}\bot {}\<[E]%
+\>[B]{}\Varid{attach}\mathbin{::}(\Conid{Monad}\;\Varid{m})\Rightarrow (\Varid{a},\Varid{m}\;\Varid{b})\to \Varid{m}\;(\Varid{a},\Varid{b}){}\<[E]%
 \\
-\>[B]{}\Varid{gene}\mathrel{=}\bot {}\<[E]%
+\>[B]{}\Varid{attach}\;(\Varid{b},\Varid{x})\mathrel{=}\mathbf{do}\;\{\mskip1.5mu \Varid{a}\leftarrow \Varid{x};\Varid{return}\;(\Varid{b},\Varid{a})\mskip1.5mu\}{}\<[E]%
 \ColumnHook
 \end{hscode}\resethooks
+
+Por fim basta injetar cada elemento de \ensuremath{\fun{Dist}\;(\Conid{A}\times\mathit B)} através de \ensuremath{\mathsf{fmap}\;i_2}:
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{ddist}\mathrel{=}\alt{\Varid{return}\comp i_1}{\mathsf{fmap}\;i_2\comp \Varid{attach}}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Podemos então apresentar o diagrama de \ensuremath{\Varid{ddist}}:
+\begin{eqnarray*}
+\xymatrix@C=2cm@R=2cm{
+        \ensuremath{\mathrm{1}}
+                \ar[r]^-{\ensuremath{i_1}}
+                \ar[d]_-{\ensuremath{i_1}}
+&
+        \ensuremath{\mathrm{1}\mathbin{+}\Conid{A}\times\fun{Dist}\;\mathit B}
+                \ar[d]_{\ensuremath{\Varid{ddist}}}
+&
+        \ensuremath{\Conid{A}\times\fun{Dist}\;\mathit B}
+                \ar[l]_-{\ensuremath{i_2}}
+                \ar[d]^-{\ensuremath{\Varid{attach}}}
+\\
+        \ensuremath{\mathrm{1}\mathbin{+}\Conid{A}\times\mathit B}
+                \ar[r]_{\ensuremath{\Varid{return}}}
+&
+        \ensuremath{\fun{Dist}\;(\mathrm{1}\mathbin{+}\Conid{A}\times\mathit B)}
+&
+        \ensuremath{\fun{Dist}\;(\Conid{A}\times\mathit B)}
+                \ar[l]^{\ensuremath{\mathsf{fmap}\;i_2}}
+}
+\end{eqnarray*}
+
+Por fim, podemos definir o operador \ensuremath{\Varid{pcataList}} através da composição monádica descrita anteriormente:
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{pcataList}\;\Varid{g}\mathrel{=}\Varid{g}\mathbin{.!}(\Varid{ddist}\comp \Varid{recList}\;(\Varid{pcataList}\;\Varid{g})\comp \Varid{outList}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+O diagrama da composição monádica é o seguinte (abreviando \ensuremath{\Varid{f}\mathrel{=}\Varid{ddist}\comp \Varid{recList}\;(\Varid{pcataList}\;\Varid{g})\comp \Varid{outList}}):
+\begin{eqnarray*}
+\xymatrix@C=5em{
+    \ensuremath{\fun{Dist}\;(\fun{Dist}\;\mathit B)}
+        \ar[d]_{\ensuremath{\mu }}
+&
+    \ensuremath{\fun{Dist}\;(\mathrm{1}\mathbin{+}\Conid{A}\times\mathit B)}
+        \ar[l]_{\ensuremath{\Conid{T}\;\Varid{g}}}
+        \ar@{..}[d]
+&
+    \ensuremath{{\Conid{A}}^{*}}
+        \ar[l]_{\ensuremath{\Varid{f}}}
+        \ar@/^3pc/[dll]^-{\ensuremath{\Varid{g}\kcomp \Varid{f}}}
+\\
+    \ensuremath{\fun{Dist}\;\mathit B}
+&
+    \ensuremath{\mathit B}
+        \ar[l]_{\ensuremath{\Varid{g}}}
+&
+\\
+&
+&
+&
+}
+\end{eqnarray*}
+
+Apresentamos então o diagrama de \ensuremath{\Varid{pacataList}}:
+\begin{eqnarray*}
+\xymatrix@C=4em@R=3em{
+    \ensuremath{{\Conid{A}}^{*}}
+           \ar@/_4pc/[ddd]_{\ensuremath{\Varid{pcataList}\;\Varid{g}}}
+           \ar@{..}[dd]
+           \ar[r]^{\ensuremath{\Varid{outList}}}
+&
+    \ensuremath{\mathrm{1}\mathbin{+}\Conid{A}\times{\Conid{A}}^{*}}
+           \ar[d]^{\ensuremath{\Varid{id}\mathbin{+}\Varid{id}\times\Varid{pcataList}\;\Varid{g}}}
+\\
+&
+     \ensuremath{\mathrm{1}\mathbin{+}\Conid{A}\times\fun{Dist}\;\mathit B}
+           \ar[d]^{\ensuremath{\Varid{ddist}}}
+\\
+     \ensuremath{\fun{Dist}\;(\fun{Dist}\;\mathit B)}
+           \ar[d]^{\ensuremath{\mu }}
+&
+     \ensuremath{\fun{Dist}\;(\mathrm{1}\mathbin{+}\Conid{A}\times\mathit B)}
+           \ar[l]^{\ensuremath{\Conid{T}\;\Varid{g}}}
+           \ar@{..}[d]
+\\
+     \ensuremath{\fun{Dist}\;\mathit B}
+&
+     \ensuremath{\mathrm{1}\mathbin{+}\Conid{A}\times\mathit B}
+           \ar[l]^{\ensuremath{\Varid{g}}}
+}
+\end{eqnarray*}
+
+Na segunda fase deste problema temos de definir \ensuremath{\Varid{gene}}, que simula o comportamento descrito no exemplo. Esta função será uma alternativa entre duas funções, uma delas que trabalha sobre o único habitante to tipo \ensuremath{\mathrm{1}}, que corresponde a uma lista vazia neste caso, ou seja, o fim da mensagem. A palavra "stop" deverá ser transmitida no fim de cada mensagem, com $10\%$ de probabilidade de falhar, logo terá $90\%$ de ser enviada. Seguindo a mesma estratégia da função apresentada \ensuremath{\Varid{padd}}, podemos definir \ensuremath{\Varid{pstop}} da seguinte forma:
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{pstop}\;\anonymous \mathrel{=}\Conid{D}\;[\mskip1.5mu ([\mskip1.5mu \text{\ttfamily \char34 stop\char34}\mskip1.5mu],\mathrm{0.9}),([\mskip1.5mu \mskip1.5mu],\mathrm{0.1})\mskip1.5mu]{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Sabemos ainda que a probabilidade de uma palavra ser enviada é de $95\%$, dado que a probabilidade de se perder é de $5\%$. Logo, considerando uma mensagem como uma lista de palavras não vazia, a função que descreve este comportamento é a seguinte:
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{plose}\;(\Varid{w},\Varid{xs})\mathrel{=}\Conid{D}\;[\mskip1.5mu (\Varid{w}\mathbin{:}\Varid{xs},\mathrm{0.95}),(\Varid{xs},\mathrm{0.05})\mskip1.5mu]{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Definidas as funções que tratam do fim e do corpo de uma mensagem, podemos então definir \ensuremath{\Varid{gene}}, como a alternativa entre estas:
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{gene}\mathrel{=}\alt{\Varid{pstop}}{\Varid{plose}}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Através de \ensuremath{\Varid{pcataList}} e \ensuremath{\Varid{gene}}, podemos ver quais são as probabilidade associadas à transmissão da mensagem \ensuremath{\Varid{words}\;\text{\ttfamily \char34 Vamos~atacar~hoje\char34}}, através da execução de \ensuremath{\Varid{transmitir}}:
+\begin{Verbatim}[fontsize=\small]
+["Vamos","atacar","hoje","stop"]  77.2%
+       ["Vamos","atacar","hoje"]   8.6%
+        ["atacar","hoje","stop"]   4.1%
+       ["Vamos","atacar","stop"]   4.1%
+         ["Vamos","hoje","stop"]   4.1%
+              ["Vamos","atacar"]   0.5%
+                ["Vamos","hoje"]   0.5%
+               ["atacar","hoje"]   0.5%
+                ["Vamos","stop"]   0.2%
+               ["atacar","stop"]   0.2%
+                 ["hoje","stop"]   0.2%
+                      ["atacar"]   0.0%
+                       ["Vamos"]   0.0%
+                        ["hoje"]   0.0%
+                        ["stop"]   0.0%
+                              []   0.0%
+\end{Verbatim}
+
+Vamos então responder às perguntas:
+\begin{itemize}
+\item Qual a probabilidade de o resultado da transmissão ser \ensuremath{[\mskip1.5mu \text{\ttfamily \char34 Vamos\char34},\text{\ttfamily \char34 hoje\char34},\text{\ttfamily \char34 stop\char34}\mskip1.5mu]}?
+Terá uma probabilidade de $4.1\%$.
+\item Qual a probabilidade de seguirem todas as palavras, mas faltar "stop" no fim?
+Terá uma probabilidade de $8.6\%$.
+\item Qual a probabilidade de o resultado da transmissão ser perfeito?
+Terá uma probabilidade de $77.2\%$.
+\end{itemize}
+
+De forma a garantir que estamos a lidar com uma distribuição válida, vamos recorrer às funções \ensuremath{\Varid{checkD}} e \ensuremath{\Varid{sumP}} definidas na biblioteca \Probability\, que validam uma distribuição e determinam o somatório das probabilidades, respetivamente, para verificar a sua validade. Através da execução da seguinte equação:
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{checkedD}\mathrel{=}\Varid{checkD}\;(\Varid{transmitir}\;(\Varid{words}\;\text{\ttfamily \char34 Vamos~atacar~hoje\char34})){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Verificamos que \ensuremath{\Varid{checkedD}} não apresenta nenhuma mensagem de erro e tem o mesmo valor que \ensuremath{\Varid{transmitir}\;(\Varid{words}\;\text{\ttfamily \char34 Vamos~atacar~hoje\char34})}.
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{valueD}\mathrel{=}(\Varid{sumP}\comp \Varid{unD}\comp \Varid{transmitir}\comp \Varid{words})\;\text{\ttfamily \char34 Vamos~atacar~hoje\char34}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Provamos também que \ensuremath{\Varid{valueD}\mathrel{=}\mathrm{1.0}}, logo estamos perante uma distribuição válida.
 
 
 %----------------- Índice remissivo (exige makeindex) -------------------------%

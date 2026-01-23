@@ -666,28 +666,610 @@ que sejam necessárias.
 
 \subsection*{Problema 1}
 
+Na \textbf{primeira questão} do Problema 1, é-nos pedido uma implementação da função 
+|levels| que coloca os elementos de uma árvore binária numa lista, tendo 
+esta várias listas, cada uma relativa a um nível da árvore.
 \begin{code}
-
-glevels = undefined
-
-bft t = undefined 
-
+glevels = either nil (cons . (singl >< g))
+    where 
+        g ([], r) = r
+        g (l, []) = l
+        g ((l:ls), (r:rs)) = (l ++ r) : g (ls, rs)
 \end{code}
+
+O diagrama do catamorfismo |levels| é o seguinte:
+\begin{eqnarray*}
+\xymatrix@@C=3cm@@R=2cm{
+        |BTree A|
+                \ar[d]_-{|cataList glevels|}
+                \ar@@/^1pc/[r]^-{|outBTree|}
+&
+        |1 + A >< square((BTree A))|
+                \ar[d]^{|id + id >< square(cataList glevels)|}
+                \ar@@/^1pc/[l]^-{|inBTree|}
+\\
+        |Seq(Seq(A))|
+&
+        |1 + A >< square((Seq(Seq(A))))|
+                \ar[l]^-{|glevels|}
+}
+\end{eqnarray*}
+
+O gene |glevels| deverá ser capaz de juntar os níveis de duas sub-árvores 
+e adicionar a raiz da àrvore à cabeça da lista resultante. Logo será necessário
+realizar uma espécie de |zip| aos elementos das listas. Esta operação está pré definida em Haskell, 
+no entanto esta função remove elementos de uma das listas, caso não tenham o mesmo comprimento, 
+então implementamos a função auxiliar |g| que concatena os elementos (listas) de 
+duas listas, sem perder informação.
+
+O diagrama do gene |glevels| é o seguinte:
+\begin{eqnarray*}
+\xymatrix@@C=2cm@@R=2cm{
+        |1|
+                \ar[r]^-{|i1|}
+                \ar[d]_-{|nil|}
+&
+        |1 + A >< square((Seq(Seq(A))))|
+                \ar[d]_{|glevels|}
+&
+        |A >< square((Seq(Seq(A))))|
+                \ar[l]_-{|i2|}
+                \ar[d]^-{|singl >< g|}
+\\
+        |Seq(Seq(A))|
+                \ar[r]_{|id|}
+&
+        |Seq(Seq(A))|
+&
+        |Seq(A) >< Seq(Seq(A))|
+                \ar[l]^{|cons|}
+}
+\end{eqnarray*}
+
+Na \textbf{segunda questão} deste problema, o desafio baseia-se em implementar uma travessia
+em largura através de um anamorfismo de listas. A estratégia usada passa por usar uma
+lista de árvores, que corresponde à queue de nodos da árvore a explorar.
+\begin{code}
+bft = concat . anaList ((id -|- g) . outList) . singl
+    where 
+        g :: (BTree a, [BTree a]) -> ([a], [BTree a])
+        g (Empty, rest) = ([], rest)
+        g (Node (x,(l,r)), rest) = ([x], rest ++ [l,r])
+\end{code}
+
+O diagrama deste anamorfismo é o seguinte:
+\begin{eqnarray*}
+\xymatrix@@C=4em@@R=4em{
+        |Seq(Seq(A))|
+                \ar@@/^1pc/[rr]^-{|outList|}
+&
+&
+        |1 + Seq(A) >< Seq(Seq(A))|
+                \ar@@/^1pc/[ll]^-{|inList|}
+\\
+        |Seq((BTree A))|
+                \ar[u]^-{|anaStream ((id + g) . out)|}
+                \ar[r]_-{|outList|}
+&
+        |1 +  BTree A >< Seq((BTree A))|
+                \ar[r]_-{|id + g|}
+&
+        |1 + Seq(A) >< Seq((BTree A))|
+                \ar[u]_{|id + id >< anaStream ((id + g) . out)|}
+}
+\end{eqnarray*}
 
 \subsection*{Problema 2}
 
+Neste problema é-nos proposto derivar a definição do seno hiperbólico para n aproximações da sua série de Taylor.
+\begin{eqnarray*}
+\start
+|
+        sinh (x) = summation (frac (x^(2n+1)) (fac((2n+1))))
+|
+\end{eqnarray*}
+
+O primeiro passo será resolver o somatório, transformando a definição de |sinh x| numa função recursiva:
+\begin{spec}
+sinh x 0 = x
+sinh x (n+1) = x^(2*n+3) / fac((2*n+3)) + sinh x n
+\end{spec}
+
+O corpo desta função é dependente do seu input |n+1|, logo teremos que simplificar |sinh x|. Podemos então introduzir duas funções:
+\begin{spec}
+f1 x n = x^(2*n+3)
+
+f2 n = fac((2*n+3))
+\end{spec}
+
+Desta forma |sinh x| ficará dependente das definições de |f1| e |f2|. Será necessário obter as definições recursivas primitivas destas duas funções, tal é alcançável através da substituição do valor de |n| por 0, de forma a obter a base da recursividade:
+\begin{spec}
+f1 x 0 = x^(2*0+3) = x^3
+
+f2 0 = fac((2*0 + 3)) = 6
+\end{spec}
+
+A definição recursiva de |f1| pode ser obtida através da divisão entre |f1 x (n+1)| e |f1 x n|:
+\begin{eqnarray*}
+\start
+|
+        frac (f1 x (n+1)) (f1 x n) = frac (x^(2n+5)) (x^(2n+3)) = x^2
+|
+\end{eqnarray*}
+
+Podemos aplicar o mesmo procedimento à função |f2|:
+\begin{eqnarray*}
+\start
+|
+        frac (f2 x (n+1)) (f2 x n) = frac (fac((2n+5))) (fac((2n+3))) = (2n+5) * (2n+4) = 4n^2 + 18n + 20
+|
+\end{eqnarray*}
+
+Temos então as definições recursivas de |f1| e |f2|:
+\begin{spec}
+f1 x 0 = x^3
+f1 x (n+1) = x^2 * f1 x n
+
+f2 0 = 6
+f2 (n+1) = (4*n^2 + 18*n + 20) * f2 n
+\end{spec}
+
+Podemos verificar que |f2| ainda depende de |n|, logo teremos de repetir o processo de forma a simplificar |f2|. Introduzimos |f3 = 4*n^2 + 18*n + 20|. Por substituição obtemos o caso base de |f3| e resolvendo a equação |f3 (n+1) - f3 n| obtemos a definição recursiva:
+\begin{spec}
+f3 0 = 20
+f3 (n+1) = 8*n + 22 + f3 n
+\end{spec}
+
+Será necessário repetir o processo uma última vez, pois |f3| continua dependente de |n|. Para obter |f4| usamos o mesmo processo apresentado anteriormente, isto é, tomamos |f4 n = 8*n|, substituimos |n| por 0, para determinar a base da recursividade, e calculamos |f4 (n+1) - f4 n| para determinar o corpo da recursividade:
+\begin{spec}
+f4 0 = 22
+f4 (n+1) = 8 + f4 n
+\end{spec}
+
+Podemos então apresentar as versões primitivas das funções mencionadas anteriormente, que nos irão ajudar na dedução da função |f|:
+\begin{code}
+f4 0 = 22
+f4 (n+1) = 8 + f4 n
+
+f3' 0 = 20
+f3' (n+1) = f4 n + f3' n
+
+f2' 0 = 6
+f2' (n+1) = f3' n * f2' n
+
+f1 x 0 = x^3
+f1 x (n+1) = x^2 * f1 x n
+
+sinh' x 0 = x
+sinh' x (n+1) = f1 x n / f2' n + sinh' x n
+\end{code}
+
+Todas estas funções partilham uma caracteristica fundamental para que seja possível derivar |f|, todas elas trabalham sobre o Functor dos Naturais. Através das seguintes regras, podemos derivar uma versão de |f|, que usa o catamorfismo |for b i| dos Naturais:
+\begin{itemize}
+\item O corpo do ciclo loop terá tantos argumentos quanto o número de funções mutuamente recursivas.
+\item Para as variáveis escolhem-se os próprios nomes das funções, pela ordem que se achar conveniente.
+\item Para os resultados vão-se buscar as expressões respectivas, retirando a variável n.
+\item Em start coleccionam-se os resultados dos casos de base das funções, pela mesma ordem.
+\end{itemize}
+
+Seguindo as regras apresentadas e a \textbf{lei da recursividade mútua}, podemos obter a seguinte função (\textbf{Nota}: por simplicidade e elegância, em vez de se utilizar pares de elementos, usaremos uma lista e a função head):
+\begin{spec}
+f' x = head . for loop start where
+        loop [s, f1, f2, f3, f4] = 
+             [f1 / f2 + s, x^2 * f1, f2 * f3, f3 + f4, 8 + f4]
+        start x = [x, x^3, 6, 20, 22]
+\end{spec}
+
+No entanto, a função |f| está definida em formato pointwise, logo será necessário aplicar a regra Universal-Cata a |for loop start|:
+\begin{eqnarray*}
+\start
+|
+        worker = for loop start
+|
+\just\equiv{ Def. for, universal cata }
+|
+        worker . inNat = either start loop . fF worker
+|
+\just\equiv{ |fF f = id + f|, Absorção-|+|, Natural-|id| }
+|
+        worker . inNat = either start (loop . worker)
+|
+\just\equiv{ Def. |inNat|, Fusão-|+|, Eq-|+|, pointwise, Def. composição }
+|
+        lcbr(
+          worker 0 = start x
+        )(
+          worker (n+1) = loop (worker n)
+        )
+|
+\end{eqnarray*}
+
+Através da definição pointwise de |worker|, e de algumas mudanças de nome às variáveis, derivamos a definição do seno hiperbólico de |x|, para |n| aproximações da sua série de Taylor:
+\begin{spec}
+f x = wrapper . worker where
+         wrapper = head
+         worker 0 = start x
+         worker(n+1) = loop x (worker n)
+
+loop x    [s,         h,       k,     j,     m     ] =
+          [h / k + s, x^2 * h, k * j, j + m, m + 8 ]
+
+start x = [x,         x^3,     6,     20,    22    ]
+\end{spec}
+
+
 \subsection*{Problema 3}
 
+O primeiro passo para resolver este problema será derivar a lei \textbf{dual} da recursividade mútua:
+\begin{eqnarray*}
+\start
+|
+        either f g = ana (either h k)
+|
+\just\equiv{ universal ana }
+|
+        out . (either f g) = fF (either f g) . (either h k)
+|
+\just\equiv{ Fusão-|+| (twice) }
+|
+        either (out . f) (out . g) = either (fF (either f g) . h) (fF (either f g) . k)
+|
+\just\equiv{ Eq-|+| }
+|
+        lcbr(
+                out . f = fF (either f g) . h
+        )(
+                out . g = fF (either f g) . k
+        )
+|
+\end{eqnarray*}
+
+De seguida iremos derivar um anamorfismo a partir do coproduto de |h| e |k|, definidos em |fair_merge|:
+\begin{eqnarray*}
+\start
+|
+        lcbr(
+                h (Cons (x,xs), y) = Cons (x, k (xs, y))
+        )(
+                k (x, Cons (y,ys)) = Cons (y, h (x, ys))
+        )
+|
+\just\equiv{ Def-|><|, Def. |assocr|, Def. |aux| }
+|
+     lcbr(
+          h ((Cons >< id) ((x,xs), y)) = Cons ((id >< k) (assocr ((x,xs), y)))
+     )(
+          k ((id >< Cons) (x, (y,ys))) = Cons ((id >< h) (aux (x, (y,ys))))
+     )
+|
+\just\equiv{ Def-comp, pointfree }
+|
+     lcbr(
+          h . (Cons >< id) = Cons . (id >< k) . assocr
+     )(
+          k . (id >< Cons) = Cons . (id >< h) . aux
+     )
+|
+\just\equiv{ ´Shunt-right´ }
+|
+     lcbr(
+          out . h . (Cons >< id) = (id >< k) . assocr
+     )(
+          out . k . (id >< Cons) = (id >< h) . aux
+     )
+|
+\just\impliedby{ Leibniz }
+|
+     lcbr(
+          out . h . (Cons >< id) . (out >< id) = (id >< k) . assocr . (out >< id)
+     )(
+          out . k . (id >< Cons) . (id >< out) = (id >< h) . aux . (id >< out)
+     )
+|
+\just\equiv{ isomorfismo in/out }
+|
+     lcbr(
+          out . h = (id >< k) . assocr . (out >< id)
+     )(
+          out . k = (id >< h) . aux . (id >< out)
+     )
+|
+\just\equiv{ Cancelamento-|+| (twice) }
+|
+     lcbr(
+          out . h = (id >< ((either h k) . i2)) . assocr . (out >< id)
+     )(
+          out . k = (id >< ((either h k) . i1)) . aux . (id >< out)
+     )
+|
+\just\equiv{ Functor-|><| }
+|
+     lcbr(
+          out . h = (id >< (either h k)) . (id >< (i2)) . assocr . (out >< id)
+     )(
+          out . k = (id >< (either h k)) . (id >< (i1)) . aux . (id >< out)
+     )
+|
+\just\equiv{ |fF f = id >< f| }
+|
+     lcbr(
+          out . h = fF (either h k) . (id >< (i2)) . assocr . (out >< id)
+     )(
+          out . k = fF (either h k) . (id >< (i1)) . aux . (id >< out)
+     )
+|
+\just\equiv{ Lei dual da recursividade mútua }
+|
+     either h k = ana (either ((id >< (i2)) . assocr . (out >< id)) ((id >< (i1)) . aux . (id >< out)))
+|
+\end{eqnarray*}
+
+\textbf{Nota}: Nos cálculos apresentados acima é referida uma função |aux|, esta função foi usada para simplificar a apresentação da função |fair_merge'|. Podemos observar na definição de |fair_merge|, mais precisamente na definição de |k|, que as instâncias |x| e |y| trocam de posições, logo a função |aux| efetua esta troca.
+
 \begin{code}
-fair_merge' = anaStream undefined
+fair_merge' = anaStream (either l r)
+    where
+        aux (x,(y,z)) = (y,(x,z))
+        l = (id >< (i2)) . assocr . (outStream >< id)
+        r = (id >< (i1)) . aux . (id >< outStream)
 \end{code}
+
+
+O diagrama do anamorfismo |fair_merge'| é o seguinte:
+\begin{eqnarray*}
+\xymatrix@@C=4cm@@R=4em{
+        |Stream A|
+&
+        |A >< Stream A|
+                \ar[l]_-{|Cons|}
+\\
+        |square((Stream A)) + square((Stream A))|
+                \ar[u]^-{|anaStream (either l r)|}
+                \ar[r]_-{|either l r|}
+&
+        |A >< square((Stream A)) + square((Stream A))|
+                \ar[u]_-{|id + anaStream (either l r)|}
+}
+\end{eqnarray*}
+
+O diagrama da alternativa |either l r| é o seguinte:
+\begin{eqnarray*}
+\xymatrix{
+        |square((Stream A))|
+                \ar[r]^-{|i1|}
+                \ar[d]_-{|out >< id|}
+&
+        |square((Stream A)) + square((Stream A))|
+                \ar[ddd]_{|either l r|}
+&
+        |square((Stream A))|
+                \ar[l]_-{|i2|}
+                \ar[d]^-{|id >< out|}
+\\
+        |(A >< Stream A) >< Stream A|
+                \ar[d]_{|assocr|}
+&
+&
+        |Stream A >< (A >< Stream A)|
+                \ar[d]^{|aux|}
+\\
+        |A >< square((Stream A))|
+                \ar[dr]^{|id >< (i2)|}
+&
+&
+        |A >< square((Stream A))|
+                \ar[dl]_{|id >< (i1)|}
+\\
+&
+        |A >< square((Stream A)) + square((Stream A))|
+&
+}
+\end{eqnarray*}
+
+De forma a garantir que o comportamento da função |fair_merge'| é realmente o correto, definimos as seguintes instâncias de |Stream Int| e a função |takeStream|, dado que estamos perante um tipo de dados infinito, podemos tirar partido da \lazy{lazy evalution} do \Haskell.
+\begin{code}
+ones :: Stream Int
+ones = Cons (1, ones)
+
+twos :: Stream Int
+twos = Cons (2, twos)
+
+takeStream :: Int -> Stream a -> [a]
+takeStream 0 _ = []
+takeStream (n+1) (Cons (x, s)) = x : takeStream n s
+\end{code}
+
+Podemos usar esta função para verificar se |fair_merge| e |fair_merge'| têm o mesmo comportamento, mas é importante realçar que esta demonstração não é uma prova total.
+\begin{code}
+streamTest n = let 
+                   input = Left (ones,twos)
+                   l = takeStream n (fair_merge input)
+                   r = takeStream n (fair_merge' input)
+               in l == r
+\end{code}
+
 
 \subsection*{Problema 4}
 
+Para resolver este problema, iremos dividir a resolução em duas fases: (1) definir o operador |pcataList| e (2) definir |gene|. Podemos verificar que os tipos de |pcataList| e |cataList| são semelhantes, e numa primeira tentativa assumir que são iguais.
+\begin{eqnarray*}
+\xymatrix@@C=3cm@@R=2cm{
+        |Seq(A)|
+                \ar[d]_-{|pcataList g|}
+                \ar@@/^1pc/[r]^-{|outList|}
+&
+        |1 + A >< Seq(A)|
+                \ar[d]^{|id + id >< pcataList g|}
+                \ar@@/^1pc/[l]^-{|inList|}
+\\
+        |Dist B|
+&
+        |1 + A >< Dist B|
+                \ar[l]^-{|g|}
+}
+\end{eqnarray*}
+
+Analisando o diagrama verificamos que o tipo do gene |g| não encaixa no diagrama, pois o seu tipo é |g: 1 + A >< B -> Dist B|, logo não poderemos definir |pcataList| como um catamorfismo de listas "normal". (É importante salientar que o diagrama apresentado é \textbf{inválido}, isto é, os tipos não são válidos.)
+
+Embora o diagrama seja inválido, podemos tentar corrigi-lo através da definição de algumas funções, isto é, se formos capazes de definir uma composição de funções que satisfaça o tipo |1 + A >< Dist B -> Dist B| e que envolva o gene |g|.
+
+Sendo |Dist B| um Monad, como podemos verificar na biblioteca \Probability\ através da definição de |return| e de |>>=|:
+\begin{itemize}
+     \item |return x = D [(x,1)]|
+     \item |d >>= f = D [(y,q*p) || (x,p) <- unD d, (y,q) <- unD (f x)]|), e o gene |g: 1 + A >< B -> Dist B|
+\end{itemize}
+
+Podemos tentar definir uma composição monádica |kcomp g (f . fF (pcataList g) . outList)|, com |f: 1 + A >< Dist B -> Dist (1 + A >< B)|. Conseguimos deduzir que |f| será uma alternativa, dado o seu tipo ser do género |A + B -> C|. O lado esquerdo da alternativa é simples de resolver, bastando efetuar uma injeção e colocar o resultado na "caixa" |Dist|, ou seja |f = either (return . i1) undefined |. Para o lado direito da alternativa teremos que emparelhar cada elemento |b| que está dentro do Monad |Dist B| com o elemento |A|. Tal é possível através da notação |do| em Haskell, que nos permite "iterar" sobre os elementos de um Monad. Definimos então a função |attach| que pega num elemento puro e combina-o dentro de um Monad.
 \begin{code}
-pcataList = undefined
-gene = undefined
+attach :: (Monad m) => (a, m b) -> m (a, b)
+attach (b,x) = do { a <- x ; return (b,a) }
 \end{code}
+
+Por fim basta injetar cada elemento de |Dist (A >< B)| através de |fmap i2|:
+\begin{code}
+ddist = either (return . i1) (fmap i2 . attach)
+\end{code}
+
+Podemos então apresentar o diagrama de |ddist|:
+\begin{eqnarray*}
+\xymatrix@@C=2cm@@R=2cm{
+        |1|
+                \ar[r]^-{|i1|}
+                \ar[d]_-{|i1|}
+&
+        |1 + A >< Dist B|
+                \ar[d]_{|ddist|}
+&
+        |A >< Dist B|
+                \ar[l]_-{|i2|}
+                \ar[d]^-{|attach|}
+\\
+        |1 + A >< B|
+                \ar[r]_{|return|}
+&
+        |Dist (1 + A >< B)|
+&
+        |Dist (A >< B)|
+                \ar[l]^{|fmap i2|}
+}
+\end{eqnarray*}
+
+Por fim, podemos definir o operador |pcataList| através da composição monádica descrita anteriormente:
+\begin{code}
+pcataList g = g .! (ddist . recList (pcataList g) . outList)
+\end{code}
+
+O diagrama da composição monádica é o seguinte (abreviando |f = ddist . recList (pcataList g) . outList|):
+\begin{eqnarray*}
+\xymatrix@@C=5em{
+    |Dist (Dist B)|
+        \ar[d]_{|muB|}
+&
+    |Dist (1 + A >< B)|
+        \ar[l]_{|T g|}
+        \ar@@{..}[d]
+&
+    |Seq(A)|
+        \ar[l]_{|f|}
+        \ar@@/^3pc/[dll]^-{|kcomp g f|}
+\\
+    |Dist B|
+&
+    |B|
+        \ar[l]_{|g|}
+&
+\\
+&
+&
+&
+}
+\end{eqnarray*}
+
+Apresentamos então o diagrama de |pacataList|:
+\begin{eqnarray*}
+\xymatrix@@C=4em@@R=3em{
+    |Seq(A)|
+           \ar@@/_4pc/[ddd]_{|pcataList g|}
+           \ar@@{..}[dd]
+           \ar[r]^{|outList|}
+&
+    |1 + A >< Seq(A)|
+           \ar[d]^{|id + id >< pcataList g|}
+\\
+&
+     |1 + A >< Dist B|
+           \ar[d]^{|ddist|}
+\\
+     |Dist (Dist B)|
+           \ar[d]^{|muB|}
+&
+     |Dist (1 + A >< B)|
+           \ar[l]^{|T g|}
+           \ar@@{..}[d]
+\\
+     |Dist B|
+&
+     |1 + A >< B|
+           \ar[l]^{|g|}
+}
+\end{eqnarray*}
+
+Na segunda fase deste problema temos de definir |gene|, que simula o comportamento descrito no exemplo. Esta função será uma alternativa entre duas funções, uma delas que trabalha sobre o único habitante to tipo |1|, que corresponde a uma lista vazia neste caso, ou seja, o fim da mensagem. A palavra "stop" deverá ser transmitida no fim de cada mensagem, com $10\%$ de probabilidade de falhar, logo terá $90\%$ de ser enviada. Seguindo a mesma estratégia da função apresentada |padd|, podemos definir |pstop| da seguinte forma:
+\begin{code}
+pstop _ = D [(["stop"], 0.9), ([], 0.1)]
+\end{code}
+
+Sabemos ainda que a probabilidade de uma palavra ser enviada é de $95\%$, dado que a probabilidade de se perder é de $5\%$. Logo, considerando uma mensagem como uma lista de palavras não vazia, a função que descreve este comportamento é a seguinte:
+\begin{code}
+plose (w, xs) = D [(w : xs, 0.95), (xs, 0.05)]
+\end{code}
+
+Definidas as funções que tratam do fim e do corpo de uma mensagem, podemos então definir |gene|, como a alternativa entre estas:
+\begin{code}
+gene = either pstop plose
+\end{code}
+
+Através de |pcataList| e |gene|, podemos ver quais são as probabilidade associadas à transmissão da mensagem |words "Vamos atacar hoje"|, através da execução de |transmitir|:
+\begin{Verbatim}[fontsize=\small]
+["Vamos","atacar","hoje","stop"]  77.2%
+       ["Vamos","atacar","hoje"]   8.6%
+        ["atacar","hoje","stop"]   4.1%
+       ["Vamos","atacar","stop"]   4.1%
+         ["Vamos","hoje","stop"]   4.1%
+              ["Vamos","atacar"]   0.5%
+                ["Vamos","hoje"]   0.5%
+               ["atacar","hoje"]   0.5%
+                ["Vamos","stop"]   0.2%
+               ["atacar","stop"]   0.2%
+                 ["hoje","stop"]   0.2%
+                      ["atacar"]   0.0%
+                       ["Vamos"]   0.0%
+                        ["hoje"]   0.0%
+                        ["stop"]   0.0%
+                              []   0.0%
+\end{Verbatim}
+
+Vamos então responder às perguntas:
+\begin{itemize}
+\item Qual a probabilidade de o resultado da transmissão ser |["Vamos","hoje","stop"]|?
+Terá uma probabilidade de $4.1\%$.
+\item Qual a probabilidade de seguirem todas as palavras, mas faltar "stop" no fim?
+Terá uma probabilidade de $8.6\%$.
+\item Qual a probabilidade de o resultado da transmissão ser perfeito?
+Terá uma probabilidade de $77.2\%$.
+\end{itemize}
+
+De forma a garantir que estamos a lidar com uma distribuição válida, vamos recorrer às funções |checkD| e |sumP| definidas na biblioteca \Probability\, que validam uma distribuição e determinam o somatório das probabilidades, respetivamente, para verificar a sua validade. Através da execução da seguinte equação:
+\begin{code}
+checkedD = checkD (transmitir (words "Vamos atacar hoje"))
+\end{code}
+
+Verificamos que |checkedD| não apresenta nenhuma mensagem de erro e tem o mesmo valor que |transmitir (words "Vamos atacar hoje")|.
+\begin{code}
+valueD = (sumP . unD . transmitir . words) "Vamos atacar hoje"
+\end{code}
+
+Provamos também que |valueD = 1.0|, logo estamos perante uma distribuição válida.
 
 
 %----------------- Índice remissivo (exige makeindex) -------------------------%
