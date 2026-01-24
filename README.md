@@ -19,7 +19,7 @@ $ docker build -t cp2526t .
 $ docker run -v ${PWD}:/cp2526t -it cp2526t
 ```
 
-Para testar as funções implementas basta executar:
+Para testar as funções implementadas basta executar:
 ```bash
 ghci cp2526t.lhs
 ```
