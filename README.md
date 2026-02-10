@@ -26,6 +26,12 @@ ghci cp2526t.lhs
 
 > Ver anexos A, B e C do enunciado para instruções mais detalhadas.
 
+
+## Resultados
+
+**Nota** do trabalho prático: **19/20**.
+
+
 ## Grupo
 
 Constituintes do grupo de trabalho:
